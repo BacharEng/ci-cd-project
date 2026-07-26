@@ -1,9 +1,7 @@
-name: Student Portal CI
+name: Student Portal CI/CD
 
 on:
   push:
-    branches: [main]
-  pull_request:
     branches: [main]
 
 jobs:
@@ -49,3 +47,31 @@ jobs:
           uvicorn app.main:app --host 0.0.0.0 --port 8000 &
           sleep 3
           curl -f http://localhost:8000/health
+
+  deploy:
+    runs-on: self-hosted
+    needs: build
+
+    env:
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_NAME: ${{ secrets.DB_NAME }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          pip3 install -r requirements.txt --break-system-packages
+          pip3 install mysql-connector-python --break-system-packages
+
+      - name: Restart service
+        run: |
+          sudo systemctl restart student-portal
+
+      - name: Health check
+        run: |
+          sleep 3
+          curl -f http://localhost:8001/health
