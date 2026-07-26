@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 def isolated_data_file(tmp_path, monkeypatch):
     """Each test gets its own temporary students.json so tests don't interfere."""
     import app.main as main_module
+
     data_file = str(tmp_path / "students.json")
     monkeypatch.setattr(main_module, "DATA_FILE", data_file)
     yield
@@ -28,7 +29,7 @@ def test_root():
 def test_health():
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json()["status"] == "ok"
+    assert response.json()["status"] == "broken"
 
 
 # --- Test 3: Get students – empty list ---
@@ -52,7 +53,9 @@ def test_create_student():
 
 # --- Test 5: Get students – returns created student ---
 def test_get_students_after_create():
-    client.post("/students", json={"name": "Bob", "email": "bob@example.com", "grade": "B"})
+    client.post(
+        "/students", json={"name": "Bob", "email": "bob@example.com", "grade": "B"}
+    )
     response = client.get("/students")
     assert response.status_code == 200
     assert len(response.json()) == 1
@@ -61,7 +64,9 @@ def test_get_students_after_create():
 
 # --- Test 6: Get student by ID ---
 def test_get_student_by_id():
-    create_resp = client.post("/students", json={"name": "Carol", "email": "carol@example.com", "grade": "A"})
+    create_resp = client.post(
+        "/students", json={"name": "Carol", "email": "carol@example.com", "grade": "A"}
+    )
     student_id = create_resp.json()["id"]
     response = client.get(f"/students/{student_id}")
     assert response.status_code == 200
@@ -76,7 +81,9 @@ def test_get_student_not_found():
 
 # --- Test 8: Update a student ---
 def test_update_student():
-    create_resp = client.post("/students", json={"name": "Dave", "email": "dave@example.com", "grade": "C"})
+    create_resp = client.post(
+        "/students", json={"name": "Dave", "email": "dave@example.com", "grade": "C"}
+    )
     student_id = create_resp.json()["id"]
     update_payload = {"name": "Dave Updated", "email": "dave@example.com", "grade": "A"}
     response = client.put(f"/students/{student_id}", json=update_payload)
@@ -87,7 +94,9 @@ def test_update_student():
 
 # --- Test 9: Delete a student ---
 def test_delete_student():
-    create_resp = client.post("/students", json={"name": "Eve", "email": "eve@example.com", "grade": "B"})
+    create_resp = client.post(
+        "/students", json={"name": "Eve", "email": "eve@example.com", "grade": "B"}
+    )
     student_id = create_resp.json()["id"]
     delete_resp = client.delete(f"/students/{student_id}")
     assert delete_resp.status_code == 200
